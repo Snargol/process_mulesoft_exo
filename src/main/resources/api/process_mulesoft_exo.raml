@@ -1,0 +1,12 @@
+#%RAML 1.0
+title: PROCESS_MULESOFT_EXO
+
+/processed-contracts:
+  get:
+    queryParameters:
+      isPair: boolean
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/processed_contracts.json

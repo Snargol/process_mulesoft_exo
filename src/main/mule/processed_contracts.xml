@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="fetch_data" doc:id="144d4051-889d-4f1b-92c9-47e49c66419f" >
+		<http:request method="GET" doc:name="Request" doc:id="fef37f4d-830d-4d11-9145-a4bd43ca9f79" config-ref="HTTP_Request_configuration" path="/contracts"/>
+	</flow>
+	<flow name="process_data" doc:id="d4871ea0-c281-41fc-a717-17508cb3f92d" >
+		<flow-ref doc:name="fetch_data_mock" doc:id="08a20edd-7402-494f-8ce4-a54adeecbf02" name="fetch_data_mock"/>
+		<ee:transform doc:name="prepare data" doc:id="6f719e46-4671-4589-aed8-59a827bd96de" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map (value, index) -> {
+	id: (value.Contract_ID as Number default 0),
+	amount: (value.Amount as Number default 0),
+	End_Date: value.End_Date as Date {format: "dd-MM-yyyy"},
+	Start_Date: value.Start_Date as Date {format: "dd-MM-yyyy"},
+	value: value
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="filter pair impair" doc:id="757799f1-2b91-4968-82b4-f2af83874fc7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{	 
+	contracts: (if (attributes.queryParams.isPair as Boolean == true) 
+		payload filter ((value, index) -> ((value.id mod 2) == 0))
+	else 
+		payload filter ((value, index) -> ((value.id mod 2) != 0)))
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="prepare data" doc:id="7a5ba62b-e1a3-4c31-99c8-886919317875" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+import * from dw::core::Arrays
+
+fun calculTotalAmount(contracts: Array<Any>) = 
+	sumBy(contracts, (item) -> item.amount) 
+	
+fun getLast(contracts: Array<Any>) =
+	(contracts orderBy (
+		$.End_Date as Date {format: "dd-MM-yyyy"}
+	))[-1].End_Date
+	
+fun getFirst(contracts: Array<Any>) =
+	(contracts orderBy (
+		$.Start_Date as Date {format: "dd-MM-yyyy"}
+	))[0].Start_Date
+---
+{
+	total: calculTotalAmount(payload.contracts default []),
+	start: getFirst(payload.contracts default []),
+	last: getLast(payload.contracts default []),
+	contracts: payload.contracts
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="calcul total" doc:id="d98ff749-2d77-4894-aa45-f37c890d2efa" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+data: {
+	amountByMonth: (payload.total
+	/ (daysBetween(payload.start as Date {format: "dd-MM-yyyy"}, payload.last as Date {format: "dd-MM-yyyy"}) / 30)),
+	amountTotal: payload.total,
+	months: (daysBetween(payload.start as Date {format: "dd-MM-yyyy"}, payload.last as Date {format: "dd-MM-yyyy"}) / 30)
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="966b30f3-8526-41c9-9d42-d2e6116a7e1d" message="#[payload]"/>
+	</flow>
+	<flow name="fetch_data_mock" doc:id="60a12e6a-b6cc-41da-86d9-1ae466d8903e" >
+		<ee:transform doc:name="Transform Message" doc:id="d11bfd58-f861-4d9a-aeb0-cc2656272ef2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+[
+  {
+    "Contract_ID": "10",
+    "Creation_Date": "21-02-2019",
+    "Start_Date": "30-04-2018",
+    "End_Date": "30-04-2019",
+    "Customer_ID": "301207461",
+    "Salesman_ID": "800023000126",
+    "SalesUnit_ID": "21M233COPL-EVFR-01",
+    "Amount": "23250.000000",
+    "Contract_Name": "",
+    "Currency_Code": "EUR",
+    "Renew": "",
+    "Customer_Name": "",
+    "Salesman_Name": "",
+    "SalesUnit_Name": "",
+    "Number_Of_Months": 12.03,
+    "Opportunity_ID": null,
+    "CUTOFF_MONTH": "01-04-2018",
+    "CUTOFF_AMOUNT": 64.4
+  },
+  {
+    "Contract_ID": "11",
+    "Creation_Date": "21-02-2019",
+    "Start_Date": "30-04-2018",
+    "End_Date": "30-04-2019",
+    "Customer_ID": "301207461",
+    "Salesman_ID": "80020000126",
+    "SalesUnit_ID": "21M123COPL-EVFR-01",
+    "Amount": "23250.000000",
+    "Contract_Name": "",
+    "Currency_Code": "EUR",
+    "Renew": "",
+    "Customer_Name": "",
+    "Salesman_Name": "",
+    "SalesUnit_Name": "",
+    "Number_Of_Months": 12.03,
+    "Opportunity_ID": null,
+    "CUTOFF_MONTH": "01-05-2018",
+    "CUTOFF_AMOUNT": 1932.13
+  },
+  {
+    "Contract_ID": "33",
+    "Creation_Date": "21-02-2019",
+    "Start_Date": "30-04-2018",
+    "End_Date": "30-04-2019",
+    "Customer_ID": "30307461",
+    "Salesman_ID": "800230000126",
+    "SalesUnit_ID": "21M12COPL-EVFR-01",
+    "Amount": "23250.000000",
+    "Contract_Name": "",
+    "Currency_Code": "EUR",
+    "Renew": "",
+    "Customer_Name": "",
+    "Salesman_Name": "",
+    "SalesUnit_Name": "",
+    "Number_Of_Months": 12.03,
+    "Opportunity_ID": null,
+    "CUTOFF_MONTH": "01-06-2018",
+    "CUTOFF_AMOUNT": 1932.13
+  },
+  {
+    "Contract_ID": "-2",
+    "Creation_Date": "21-02-2019",
+    "Start_Date": "30-04-2018",
+    "End_Date": "30-04-2019",
+    "Customer_ID": "300327461",
+    "Salesman_ID": "800022000126",
+    "SalesUnit_ID": "21MC12OPL-EVFR-01",
+    "Amount": "23250.000000",
+    "Contract_Name": "",
+    "Currency_Code": "EUR",
+    "Renew": "",
+    "Customer_Name": "",
+    "Salesman_Name": "",
+    "SalesUnit_Name": "",
+    "Number_Of_Months": 12.03,
+    "Opportunity_ID": null,
+    "CUTOFF_MONTH": "01-07-2018",
+    "CUTOFF_AMOUNT": 1932.13
+  },
+  {
+    "Contract_ID": "",
+    "Creation_Date": "21-02-2019",
+    "Start_Date": "30-04-2018",
+    "End_Date": "30-04-2019",
+    "Customer_ID": "30027461",
+    "Salesman_ID": "80001000126",
+    "SalesUnit_ID": "21MC21OPL-EVFR-01",
+    "Amount": "23250.000000",
+    "Contract_Name": "",
+    "Currency_Code": "EUR",
+    "Renew": "",
+    "Customer_Name": "",
+    "Salesman_Name": "",
+    "SalesUnit_Name": "",
+    "Number_Of_Months": 12.03,
+    "Opportunity_ID": null,
+    "CUTOFF_MONTH": "01-08-2018",
+    "CUTOFF_AMOUNT": 1932.13
+  },
+  {
+    "Contract_ID": "2",
+    "Creation_Date": "21-02-2019",
+    "Start_Date": "30-04-2018",
+    "End_Date": "30-04-2019",
+    "Customer_ID": "300227461",
+    "Salesman_ID": "800120000126",
+    "SalesUnit_ID": "21MCOPL-EVFR-01",
+    "Amount": "23250.000000",
+    "Contract_Name": "",
+    "Currency_Code": "EUR",
+    "Renew": "",
+    "Customer_Name": "",
+    "Salesman_Name": "",
+    "SalesUnit_Name": "",
+    "Number_Of_Months": 12.03,
+    "Opportunity_ID": null,
+    "CUTOFF_MONTH": "01-09-2018",
+    "CUTOFF_AMOUNT": 1932.13
+  },
+  {
+    "Contract_ID": "118",
+    "Creation_Date": "21-02-2019",
+    "Start_Date": "30-04-2018",
+    "End_Date": "30-04-2019",
+    "Customer_ID": "3007461",
+    "Salesman_ID": "80000200126",
+    "SalesUnit_ID": "21MC12PL-EVFR-01",
+    "Amount": "23250.000000",
+    "Contract_Name": "",
+    "Currency_Code": "EUR",
+    "Renew": "",
+    "Customer_Name": "",
+    "Salesman_Name": "",
+    "SalesUnit_Name": "",
+    "Number_Of_Months": 12.03,
+    "Opportunity_ID": null,
+    "CUTOFF_MONTH": "01-10-2018",
+    "CUTOFF_AMOUNT": 1932.13
+  },
+  {
+    "Contract_ID": "119",
+    "Creation_Date": "21-02-2019",
+    "Start_Date": "30-04-2018",
+    "End_Date": "30-04-2019",
+    "Customer_ID": "30071461",
+    "Salesman_ID": "800021000126",
+    "SalesUnit_ID": "21M21COPL-EVFR-01",
+    "Amount": "23250.000000",
+    "Contract_Name": "",
+    "Currency_Code": "EUR",
+    "Renew": "",
+    "Customer_Name": "",
+    "Salesman_Name": "",
+    "SalesUnit_Name": "",
+    "Number_Of_Months": 12.03,
+    "Opportunity_ID": null,
+    "CUTOFF_MONTH": "01-11-2018",
+    "CUTOFF_AMOUNT": 1932.13
+  },
+  {
+    "Contract_ID": "121",
+    "Creation_Date": "21-02-2019",
+    "Start_Date": "30-04-2018",
+    "End_Date": "30-04-2019",
+    "Customer_ID": "3007461",
+    "Salesman_ID": "800120000126",
+    "SalesUnit_ID": "21MC2OPL-EVFR-01",
+    "Amount": "23250.000000",
+    "Contract_Name": "",
+    "Currency_Code": "EUR",
+    "Renew": "",
+    "Customer_Name": "",
+    "Salesman_Name": "",
+    "SalesUnit_Name": "",
+    "Number_Of_Months": 12.03,
+    "Opportunity_ID": null,
+    "CUTOFF_MONTH": "01-12-2018",
+    "CUTOFF_AMOUNT": 1932.13
+  },
+  {
+    "Contract_ID": "122",
+    "Creation_Date": "21-02-2019",
+    "Start_Date": "30-04-2018",
+    "End_Date": "30-04-2019",
+    "Customer_ID": "3007461",
+    "Salesman_ID": "800012000126",
+    "SalesUnit_ID": "21MCO2PL-EVFR-01",
+    "Amount": "23250.000000",
+    "Contract_Name": "",
+    "Currency_Code": "EUR",
+    "Renew": "",
+    "Customer_Name": "",
+    "Salesman_Name": "",
+    "SalesUnit_Name": "",
+    "Number_Of_Months": 12.03,
+    "Opportunity_ID": null,
+    "CUTOFF_MONTH": "01-01-2019",
+    "CUTOFF_AMOUNT": 1932.13
+  }
+]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
