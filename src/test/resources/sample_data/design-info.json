@@ -6,6 +6,9 @@
     "c88216fa-f3e4-4c53-b80c-58dacfc907d5": {
       "payload": "sample_data/*_1.dwl",
       "attributes": "sample_data/*_2.dwl"
+    },
+    "f25e9dfd-352c-44b0-b110-a37a32b443aa": {
+      "payload": "sample_data/json.json"
     }
   }
 }

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="calculTotalAmountOfContracts" doc:id="f4d91211-06eb-47c7-bc30-e483263cc3e7" >
+		<ee:transform doc:name="Transform Message" doc:id="31d3ed08-4a16-48d3-a46b-41545c026c3f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	contracts: payload[0] default []
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="7c81a554-bbfe-4797-b7b1-508d34258a8b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+import * from dw::core::Arrays
+
+fun calculTotalAmount(contracts: Array<Any>) = 
+	sumBy(contracts, (item) -> item.amount) 
+---
+calculTotalAmount(payload.contracts) default '']]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getLastDateOfContracts" doc:id="a4b4ad0b-a1a0-4616-90f7-64f8844f3d0b" >
+		<ee:transform doc:name="Transform Message" doc:id="1f3a1911-217a-4d65-baa9-724ec39638ef" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	contracts: payload[0] default []
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="8c84b714-aead-41b1-a50e-629811c10c34" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+import * from dw::core::Arrays
+
+fun getLast(contracts: Array<Any>) =
+	(contracts orderBy (
+		$.end_Date as Date {format: "dd-MM-yyyy"}
+	))[-1].end_Date
+---
+getLast(payload.contracts) default '']]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getFirstDateOfContracts" doc:id="d997c50b-4333-4926-be19-19a8b5014b09" >
+		<ee:transform doc:name="Transform Message" doc:id="f25e9dfd-352c-44b0-b110-a37a32b443aa" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	contracts: payload[0] default []
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="2c0150b5-8c36-4616-b622-65e8037d3000" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+fun getFirst(contracts: Array<Any>) = do {
+	var return = (contracts orderBy (
+		$.start_Date as Date {format: "dd-MM-yyyy"}
+	))[0].start_Date
+	---
+	return
+}
+
+---
+getFirst(payload.contracts) default '']]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

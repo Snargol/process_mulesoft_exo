@@ -9,13 +9,4 @@ type contracts = Array<{|  Contract_ID: String,   Creation_Date: String,   Start
 ]]></types:shape>
     </types:type>
   </types:catalog>
-  <types:enrichment select="#7a5ba62b-e1a3-4c31-99c8-886919317875">
-    <types:processor-declaration>
-      <types:input-event>
-        <types:message>
-          <types:payload type="contracts"/>
-        </types:message>
-      </types:input-event>
-    </types:processor-declaration>
-  </types:enrichment>
 </types:mule>
