@@ -80,8 +80,22 @@ total: {
 				amountTotal: value.amount,
 				months: (daysBetween(value.start_Date as Date {format: "dd-MM-yyyy"}, value.end_Date as Date {format: "dd-MM-yyyy"}) / 30)
 			): ((value.amount as Number default 0)
-				/ (daysBetween(value.start_Date as Date {format: "dd-MM-yyyy"}, value.end_Date as Date {format: "dd-MM-yyyy"}) / 30)),
-			id @(contracts: sizeOf(value.contracts)): value.id,
+				/ (daysBetween(value.start_Date as Date {format: "dd-MM-yyyy"}, value.end_Date as Date {format: "dd-MM-yyyy"}) / 30)) default "",
+			id @(contracts: sizeOf(value.contracts)): value.id  default "",
+			dateStart: value.start_Date  default "",
+			dateEnd: value.end_Date  default "",
+			customer_id: (value.contracts[0].value.Customer_ID) default "",
+			salesman_id: (value.contracts map ($.value.Salesman_ID))  default "",
+			salesman_Unit: (value.contracts[0].value.SalesUnit_ID)  default "",
+			contract_Name: (value.contracts[0].value.Contract_Name)  default "",
+			currency_Code: (value.contracts[0].value.Currency_Code)  default "",
+			renew: (value.contracts[0].value.Renew)  default "",
+			customer_Name: (value.contracts[0].value.Customer_Name)  default "",
+			salesman_Name: (value.contracts[0].value.Salesman_Name)  default "",
+			salesUnit_Name: (value.contracts[0].value.SalesUnit_Name)  default "",
+			opportunity_id: (value.contracts[0].value.Opportunity_ID)  default "",
+			cutoff_month: (value.contracts[0].value.CUTOFF_MONTH)  default "",
+			cutoff_amount: (value.contracts[0].value.CUTOFF_AMOUNT)  default "",
 	})
 }
 ]]></ee:set-payload>
@@ -298,39 +312,6 @@ output application/json
     "CUTOFF_AMOUNT": 1932.13
   }
 ]]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		<ee:transform doc:name="Transform Message" doc:id="64808267-98b6-45cc-9f01-183cc5b50098" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
----
-<total>
-  <data>
-    <amountByMonth amountTotal="46300" months="12.166666666666666">3805.479452054795</amountByMonth>
-    <id contracts="2">10</id>
-  </data>
-  <data>
-    <amountByMonth amountTotal="20250" months="12.166666666666666">1664.3835616438357</amountByMonth>
-    <id contracts="1">-2</id>
-  </data>
-  <data>
-    <amountByMonth amountTotal="18250" months="12.166666666666666">1500</amountByMonth>
-    <id contracts="1">0</id>
-  </data>
-  <data>
-    <amountByMonth amountTotal="19900" months="12.166666666666666">1635.6164383561645</amountByMonth>
-    <id contracts="1">2</id>
-  </data>
-  <data>
-    <amountByMonth amountTotal="83250" months="12.166666666666666">6842.465753424658</amountByMonth>
-    <id contracts="2">118</id>
-  </data>
-  <data>
-    <amountByMonth amountTotal="43250" months="12.166666666666666">3554.7945205479455</amountByMonth>
-    <id contracts="1">122</id>
-  </data>
-</total>]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</flow>
